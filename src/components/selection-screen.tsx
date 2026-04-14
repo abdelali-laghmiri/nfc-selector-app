@@ -42,26 +42,36 @@ export function SelectionScreen({ user, onLogout }: SelectionScreenProps) {
 
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL || "https://backend-n-lac.vercel.app"}/api/v1/attendance/nfc/checkin`,
+        `${import.meta.env.VITE_BACKEND_URL || "https://backend-n-lac.vercel.app"}/api/v1/attendance/nfc-scans`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${localStorage.getItem("nfc_selector.access_token")}`,
           },
-          body: JSON.stringify({ nfc_card_id: nfcId }),
+          body: JSON.stringify({ nfc_uid: nfcId }),
         }
       );
 
       const data = await response.json();
 
-      setLastScan({
-        employeeId: data.employee_id || nfcId,
-        employeeName: data.employee_name || "Unknown",
-        timestamp: new Date(),
-        success: response.ok,
-        message: data.message || (response.ok ? "Check-in successful" : "Check-in failed"),
-      });
+      if (response.ok) {
+        setLastScan({
+          employeeId: String(data.employee_id || nfcId),
+          employeeName: data.employee_name || "Unknown",
+          timestamp: new Date(),
+          success: true,
+          message: data.message || "Check-in successful",
+        });
+      } else {
+        setLastScan({
+          employeeId: nfcId,
+          employeeName: "Unknown",
+          timestamp: new Date(),
+          success: false,
+          message: data.detail || "Check-in failed",
+        });
+      }
     } catch {
       setLastScan({
         employeeId: nfcId,
